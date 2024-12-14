@@ -1,0 +1,68 @@
+import requests
+import random
+KEY = "74de4b7826b74b70b4d3a0fe3191239a"
+URL = "https://api.spoonacular.com/recipes"
+def find_dishes(items):
+    link = f"{URL}/findByIngredients"
+    params = {
+        'ingredients': ','.join(items),
+        'number': 10,
+        'apiKey': KEY
+    }
+    response = requests.get(link, params=params)
+    
+    if response.status_code == 200:
+        return [(dish['title'], dish['id']) for dish in response.json()]
+    else:
+        print("Failed to fetch dishes")
+        return []
+def get_info(dish_id):
+    link = f"{URL}/{dish_id}/information"
+    params = {'apiKey': KEY}
+    response = requests.get(link, params=params)
+    
+    if response.status_code == 200:
+        return response.json()
+    return None
+def create_schedule(items):
+    dishes = find_dishes(items)
+    if not dishes:
+        return "No dishes found."
+    chosen_dishes = random.sample(dishes, min(7, len(dishes)))
+    return chosen_dishes
+def get_input():
+    print("Please list the ingredients you have, separated by commas:")
+    user_input = input().split(",")
+    return [ingredient.strip().lower() for ingredient in user_input]
+def show_dishes(dishes):
+    if dishes:
+        print("Here are the dishes you can make:")
+        for idx, (name, _) in enumerate(dishes):
+            print(f"{idx + 1}. {name}")
+    else:
+        print("No dishes found.")
+def ask_for_plan():
+    print("Would you like to create a weekly meal plan? (yes/no)")
+    return input().strip().lower() == "yes"
+def run_program():
+    items = get_input()
+    dishes = find_dishes(items)
+    show_dishes(dishes)
+    
+    if ask_for_plan():
+        schedule = create_schedule(items)
+        if isinstance(schedule, str):
+            print(schedule)
+        else:
+            print("\nHere’s your meal schedule for the week:")
+            for day, (name, dish_id) in enumerate(schedule, 1):
+                print(f"Day {day}: {name}")
+                info = get_info(dish_id)
+                if info:
+                    print(f"  - Time: {info['readyInMinutes']} minutes")
+                    print(f"  - Servings: {info['servings']}")
+    else:
+        print("Meal plan not generated.")
+
+if __name__ == "__main__":
+    run_program()
